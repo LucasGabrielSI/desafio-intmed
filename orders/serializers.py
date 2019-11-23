@@ -5,10 +5,11 @@ from products.serializers import MotherboardSerializer, MemoryRAMSerializer, Pro
 
 class CompletePcSerializer(ModelSerializer):
     processor = ProcessorSerializer
-    memory_ram = MemoryRAMSerializer
+    Memory_ram = MemoryRAMSerializer
     video_board = VideoBoardSerializer
     motherboard = MotherboardSerializer
 
     class Meta:
         model = CompletePC
-        fields = ['id', 'processor', 'memory_ram', 'video_board', 'motherboard']
+        depth = 1
+        fields = ['id', 'processor', 'Memory_ram', 'video_board', 'motherboard']

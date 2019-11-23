@@ -7,8 +7,9 @@ from products.models import Processor, Motherboard, MemoryRAM, VideoBoard
 class CompletePC(models.Model):
     name_client = models.ForeignKey(to=User, on_delete=models.CASCADE, verbose_name='Nome do cliente', max_length=255)
     processor = models.ForeignKey(to=Processor, on_delete=models.CASCADE, related_name='processor', )
-    Memory_ram = models.ForeignKey(to=MemoryRAM, on_delete=models.CASCADE, related_name='memory_ram')
-    video_board = models.ForeignKey(to=VideoBoard, on_delete=models.CASCADE, related_name='video_board')
+    Memory_ram = models.ManyToManyField(to=MemoryRAM, related_name='memory_ram')
+    video_board = models.ForeignKey(to=VideoBoard, on_delete=models.CASCADE, related_name='video_board', null=True,
+                                    blank=True)
     motherboard = models.ForeignKey(to=Motherboard, on_delete=models.CASCADE, related_name='motherboard')
 
     def __str__(self):

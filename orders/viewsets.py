@@ -1,6 +1,6 @@
 from .models import CompletePC
-from products.models import Processor, Motherboard, MemoryRAM, VideoBoard
 from .serializers import CompletePcSerializer
+from products.models import Processor, Motherboard, MemoryRAM, VideoBoard
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -14,7 +14,7 @@ class CompletePcViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = [CompletePcSerializer]
 
-    @action(methods=['POST'], detail=False, permission_classes=[AllowAny, ])
+    @action(methods=['POST'], detail=False, permission_classes=[IsAuthenticated, ])
     def mount_computer(self, request):
         """
         service to receive id of components for mount the computer.
@@ -22,39 +22,113 @@ class CompletePcViewSet(ModelViewSet):
         if not, Being a valid request, the server creates the request by storing it in the database of the store, and
         returns your customer information.
         """
-        user = request.user
-        processor_id = request.data['processor_id']
-        memory_ram_id = request.data['memory_ram_id']
-        motherboard_id = request.data['motherboard_id']
-        video_board_id = request.data['video_board_id']
+        try:
+            user = request.user
+            id_processor = str(request.data['id_processor'])
+            id_memory_ram = list(request.data['id_memory_ram'])
+            id_motherboard = str(request.data['id_motherboard'])
+            id_video_board = str(request.data['id_video_board'])
+        except ValueError as exc:
+            return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST, 'error': str(exc)})
 
-        processor = Processor.objects.get(id=processor_id)
-        memory_ram = MemoryRAM.objects.get(id=memory_ram_id)
-        video_board = VideoBoard.objects.get(id=video_board_id)
-        motherboard = Motherboard.objects.get(id=motherboard_id)
+        if len(id_processor) > 1:
+            return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST,
+                             'message': 'Opss, Você só deve selecionar um processador!'})
+        if len(id_motherboard) > 1:
+            return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST,
+                             'message': 'Opss, Você só deve selecionar uma placa mãe!'})
+        if len(id_video_board) > 1:
+            return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST,
+                             'message': 'Opss, Você só deve selecionar uma placa de vídeo!'})
+        if len(id_memory_ram) is 0:
+            return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST,
+                             'message': 'Opss, Você deve selecionar ao menos uma memória RAM!'})
 
-        if len(processor_id) is 1:
-            if len(motherboard_id) is 1:
-                if processor.brand is motherboard.supported_processor:
-                    if len(memory_ram_id) >= 1:
-                        if len(memory_ram_id) is motherboard.quantity_slots_ram:
-                            if memory_ram.available_sizes is motherboard.total_memory_ram_supported:
-                                if len(video_board_id) is 1 and video_board.integrated_video:
-                                    complete_pc = CompletePC.objects.create(name_client=user,
-                                                                            processor=processor,
-                                                                            memory_ram=memory_ram,
-                                                                            video_board=video_board,
-                                                                            motherboard=motherboard)
-                                    complete_pc.save()
-                                    return Response({'success': True, 'message': 'Pc montando com sucesso'})
-                                elif len(video_board_id) is 1 and not video_board.integrated_video:
-                                    complete_pc = CompletePC.objects.create(name_client=user,
-                                                                            processor=processor,
-                                                                            memory_ram=memory_ram,
-                                                                            motherboard=motherboard)
-                                    complete_pc.save()
-                                    return Response({'success': True, 'message': 'Pc montando com sucesso'})
-                                else:
-                                    message1 = 'É possível selecionar apenas uma placa de vídeo para compor a máquina'
-                            else:
-                                message2 = ''
+        try:
+            processor = Processor.objects.get(id=id_processor)
+        except Processor.DoesNotExist as exc:
+            return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST,
+                             'error': str(exc)})
+        try:
+            motherboard = Motherboard.objects.get(id=id_motherboard)
+        except Motherboard.DoesNotExist as exc:
+            return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST,
+                             'error': str(exc)})
+
+        if not((processor.brand is motherboard.supported_processor) or (
+           (motherboard.supported_processor == motherboard.INTEL_AMD)
+           and (processor.brand == 'INTEL' or processor.brand == 'AMD'))):
+            return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST,
+                             'message': 'Opss, A placa mãe selecionada não suporta o processador selecionado'})
+
+        if len(id_memory_ram) > motherboard.quantity_slots_ram:
+            return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST,
+                             'message': 'Opss, A quantitade de memórias ram selecionas superam a quantidade suportada '
+                                        'pela placa mãe'})
+
+        if len(id_memory_ram) > 1:
+            total = 0
+            for memory_ram in id_memory_ram:
+                memory_ram = MemoryRAM.objects.get(id=memory_ram)
+                total += int(memory_ram.available_sizes)
+            if total > int(motherboard.total_memory_ram_supported):
+                return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST,
+                                 'message': 'Opss, A quantitade total de armazenamento em GB não deve superar o total '
+                                            'de memória RAM suportada pela placa mãe!'})
+        if not motherboard.integrated_video:
+            if len(id_video_board) is 0:
+                return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST,
+                                 'message': 'Opss, Sua placa mãe não possui vídeo integrado, você deve selecionar uma '
+                                            'placa de vídeo'})
+            else:
+                try:
+                    video_board = VideoBoard.objects.get(id=id_video_board)
+                except VideoBoard.DoesNotExist as exc:
+                    return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST,
+                                     'error': str(exc)})
+                list_memory = []
+                for memory_ram in id_memory_ram:
+                    memory_ram = MemoryRAM.objects.get(id=memory_ram)
+                    list_memory.append(memory_ram)
+                complete_pc = CompletePC.objects.create(name_client=user,
+                                                        processor=processor,
+                                                        video_board=video_board,
+                                                        motherboard=motherboard)
+                complete_pc.Memory_ram.set(list_memory)
+                serializer = CompletePcSerializer(complete_pc, many=False)
+                complete_pc.save()
+                return Response({'success': True, 'status': status.HTTP_201_CREATED,
+                                 'message': 'Computador montado com sucesso!', 'data': serializer.data})
+        else:
+            if len(id_video_board) is 0:
+                list_memory = []
+                for memory_ram in id_memory_ram:
+                    memory_ram = MemoryRAM.objects.get(id=memory_ram)
+                    list_memory.append(memory_ram)
+                complete_pc = CompletePC.objects.create(name_client=user,
+                                                        processor=processor,
+                                                        motherboard=motherboard)
+                complete_pc.Memory_ram.set(list_memory)
+                serializer = CompletePcSerializer(complete_pc, many=False)
+                complete_pc.save()
+                return Response({'success': True, 'status': status.HTTP_201_CREATED,
+                                 'message': 'Computador montado com sucesso!', 'data': serializer.data})
+            else:
+                try:
+                    video_board = VideoBoard.objects.get(id=id_video_board)
+                except VideoBoard.DoesNotExist as exc:
+                    return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST,
+                                     'error': str(exc)})
+                list_memory = []
+                for memory_ram in id_memory_ram:
+                    memory_ram = MemoryRAM.objects.get(id=memory_ram)
+                    list_memory.append(memory_ram)
+                complete_pc = CompletePC.objects.create(name_client=user,
+                                                        processor=processor,
+                                                        video_board=video_board,
+                                                        motherboard=motherboard)
+                complete_pc.Memory_ram.set(list_memory)
+                serializer = CompletePcSerializer(complete_pc, many=False)
+                complete_pc.save()
+                return Response({'success': True, 'status': status.HTTP_201_CREATED,
+                                 'message': 'Computador montado com sucesso!', 'data': serializer.data})
