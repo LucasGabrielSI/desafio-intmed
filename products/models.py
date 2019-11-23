@@ -32,9 +32,12 @@ class Motherboard(models.Model):
         (INTEL_AMD, 'INTEL E AMD')
     ]
 
+    opcao1 = '16'
+    opcao2 = '64'
+
     TOTAL_MEMORY_SUPPORTED = [
-        ('OPCAO1', 'Até 16 GB'),
-        ('OPCAO2', 'Até 64 GB'),
+        (opcao1, 'Até 16 GB'),
+        (opcao2, 'Até 64 GB'),
     ]
 
     product = models.CharField(verbose_name='Produto', max_length=255)
@@ -54,12 +57,18 @@ class Motherboard(models.Model):
 
 
 class MemoryRAM(models.Model):
+    opcao1 = '4'
+    opcao2 = '8'
+    opcao3 = '16'
+    opcao4 = '32'
+    opcao5 = '64'
+
     AVAILABLE_SIZES = [
-        ('OPCAO1', '4 GB'),
-        ('OPCAO2', '8 GB'),
-        ('OPCAO3', '16 GB'),
-        ('OPCAO4', '32 GB'),
-        ('OPCAO5', '64 GB'),
+        (opcao1, '4 GB'),
+        (opcao2, '8 GB'),
+        (opcao3, '16 GB'),
+        (opcao4, '32 GB'),
+        (opcao5, '64 GB'),
     ]
 
     product = models.CharField(verbose_name='Produto', max_length=255)
