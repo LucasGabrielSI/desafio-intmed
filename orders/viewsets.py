@@ -6,13 +6,16 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 class CompletePcViewSet(ModelViewSet):
     queryset = CompletePC.objects.all()
     permission_classes = [IsAuthenticated]
     serializer_class = [CompletePcSerializer]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['create_at', ]
 
     @action(methods=['POST'], detail=False, permission_classes=[IsAuthenticated, ])
     def mount_computer(self, request):
@@ -55,7 +58,7 @@ class CompletePcViewSet(ModelViewSet):
             return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST,
                              'error': str(exc)})
 
-        if not((processor.brand is motherboard.supported_processor) or (
+        if not((processor.brand == motherboard.supported_processor) or (
            (motherboard.supported_processor == motherboard.INTEL_AMD)
            and (processor.brand == 'INTEL' or processor.brand == 'AMD'))):
             return Response({'success': False, 'status': status.HTTP_400_BAD_REQUEST,
@@ -90,7 +93,7 @@ class CompletePcViewSet(ModelViewSet):
                 for memory_ram in id_memory_ram:
                     memory_ram = MemoryRAM.objects.get(id=memory_ram)
                     list_memory.append(memory_ram)
-                complete_pc = CompletePC.objects.create(name_client=user,
+                complete_pc = CompletePC.objects.create(information_of_client=user,
                                                         processor=processor,
                                                         video_board=video_board,
                                                         motherboard=motherboard)
@@ -105,7 +108,7 @@ class CompletePcViewSet(ModelViewSet):
                 for memory_ram in id_memory_ram:
                     memory_ram = MemoryRAM.objects.get(id=memory_ram)
                     list_memory.append(memory_ram)
-                complete_pc = CompletePC.objects.create(name_client=user,
+                complete_pc = CompletePC.objects.create(information_of_client=user,
                                                         processor=processor,
                                                         motherboard=motherboard)
                 complete_pc.Memory_ram.set(list_memory)
@@ -123,7 +126,7 @@ class CompletePcViewSet(ModelViewSet):
                 for memory_ram in id_memory_ram:
                     memory_ram = MemoryRAM.objects.get(id=memory_ram)
                     list_memory.append(memory_ram)
-                complete_pc = CompletePC.objects.create(name_client=user,
+                complete_pc = CompletePC.objects.create(information_of_client=user,
                                                         processor=processor,
                                                         video_board=video_board,
                                                         motherboard=motherboard)
@@ -132,3 +135,9 @@ class CompletePcViewSet(ModelViewSet):
                 complete_pc.save()
                 return Response({'success': True, 'status': status.HTTP_201_CREATED,
                                  'message': 'Computador montado com sucesso!', 'data': serializer.data})
+
+    @action(methods=['GET'], detail=False, permission_classes=[IsAuthenticated])
+    def list_complete_pcs(self, request):
+        queryset = CompletePC.objects.all()
+        serializer = CompletePcSerializer(queryset, many=True)
+        return Response(serializer.data)
