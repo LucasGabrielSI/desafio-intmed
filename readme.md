@@ -37,6 +37,6 @@ python manage.py createsuperuser
 python manage.py test
 ```
 
-### Documentatio API
+### Documentation API
 [clink for to view documentation](https://documenter.getpostman.com/view/5317169/SW7dURSu?version=latest)
 
