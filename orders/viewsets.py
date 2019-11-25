@@ -103,7 +103,7 @@ class CompletePcViewSet(ModelViewSet):
                 serializer = CompletePcSerializer(complete_pc, many=False)
                 complete_pc.save()
                 return Response(data={'success': True, 'message': 'Computador montado com sucesso!',
-                                      'payload': serializer.data},
+                                      'status': status.HTTP_201_CREATED, 'payload': serializer.data},
                                 status=status.HTTP_201_CREATED)
         else:
             if len(id_video_board) is 0:
