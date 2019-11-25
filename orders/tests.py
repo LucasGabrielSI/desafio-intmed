@@ -26,7 +26,7 @@ class CompletePcTests(APITestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=user)
 
-        url = 'http://localhost:8000/api/orders/mount_computer/'
+        url = 'https://apisilvertec.pythonanywhere.com/api/orders/mount_computer/'
         data = {'id_processor': 1,
                 'id_memory_ram': [1, 1],
                 'id_motherboard': 1,
@@ -46,5 +46,5 @@ class CompletePcTests(APITestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=user)
 
-        response = self.client.get('http://localhost:8000/api/orders/list_complete_pcs/')
+        response = self.client.get('https://apisilvertec.pythonanywhere.com/api/orders/list_complete_pcs/')
         assert response.status_code == 200
