@@ -6,16 +6,18 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
-from django_filters.rest_framework import DjangoFilterBackend
 
 
 class CompletePcViewSet(ModelViewSet):
     queryset = CompletePC.objects.all()
     permission_classes = [IsAuthenticated]
     serializer_class = [CompletePcSerializer]
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['create_at', ]
+    filter_fields = ('create_at', )
+    filter_backends = [OrderingFilter]
+    ordering_fields = ['username', 'email']
+    ordering = ['username']
 
     @action(methods=['POST'], detail=False, permission_classes=[IsAuthenticated, ])
     def mount_computer(self, request):
@@ -100,8 +102,9 @@ class CompletePcViewSet(ModelViewSet):
                 complete_pc.Memory_ram.set(list_memory)
                 serializer = CompletePcSerializer(complete_pc, many=False)
                 complete_pc.save()
-                return Response({'success': True, 'status': status.HTTP_201_CREATED,
-                                 'message': 'Computador montado com sucesso!', 'data': serializer.data})
+                return Response(data={'success': True, 'message': 'Computador montado com sucesso!',
+                                      'payload': serializer.data},
+                                status=status.HTTP_201_CREATED)
         else:
             if len(id_video_board) is 0:
                 list_memory = []
@@ -114,8 +117,9 @@ class CompletePcViewSet(ModelViewSet):
                 complete_pc.Memory_ram.set(list_memory)
                 serializer = CompletePcSerializer(complete_pc, many=False)
                 complete_pc.save()
-                return Response({'success': True, 'status': status.HTTP_201_CREATED,
-                                 'message': 'Computador montado com sucesso!', 'data': serializer.data})
+                return Response(data={'success': True, 'message': 'Computador montado com sucesso!',
+                                      'status': status.HTTP_201_CREATED, 'payload': serializer.data},
+                                status=status.HTTP_201_CREATED)
             else:
                 try:
                     video_board = VideoBoard.objects.get(id=id_video_board)
@@ -133,11 +137,15 @@ class CompletePcViewSet(ModelViewSet):
                 complete_pc.Memory_ram.set(list_memory)
                 serializer = CompletePcSerializer(complete_pc, many=False)
                 complete_pc.save()
-                return Response({'success': True, 'status': status.HTTP_201_CREATED,
-                                 'message': 'Computador montado com sucesso!', 'data': serializer.data})
+                return Response(data={'success': True, 'message': 'Computador montado com sucesso!',
+                                      'status': status.HTTP_201_CREATED, 'payload': serializer.data},
+                                status=status.HTTP_201_CREATED)
 
     @action(methods=['GET'], detail=False, permission_classes=[IsAuthenticated])
     def list_complete_pcs(self, request):
+        """
+        service to return all instances of model CompletePC
+        """
         queryset = CompletePC.objects.all()
         serializer = CompletePcSerializer(queryset, many=True)
-        return Response(serializer.data)
+        return Response({'data': serializer.data}, status=status.HTTP_200_OK)

@@ -11,7 +11,7 @@ class CompletePcSerializer(ModelSerializer):
     Memory_ram = MemoryRAMSerializer
     video_board = VideoBoardSerializer
     motherboard = MotherboardSerializer
-    information_of_client = UserSerializer
+    information_of_client = UserSerializer()
 
     class Meta:
         model = CompletePC
