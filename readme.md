@@ -31,7 +31,7 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
-* run tets
+* run tests
 
 ```sh
 python manage.py test
